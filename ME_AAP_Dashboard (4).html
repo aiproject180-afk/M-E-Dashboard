@@ -1,0 +1,1814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>M&E AAP Dashboard — WKH April 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@300;400;600;700;800&display=swap');
+
+  :root {
+    --bg: #0b0f1a;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --border: #1f2d45;
+    --accent: #00c8a0;
+    --accent2: #3b82f6;
+    --accent3: #f59e0b;
+    --accent4: #ef4444;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --green: #10b981;
+    --red: #f43f5e;
+    --yellow: #fbbf24;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Sora', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(135deg, #0b0f1a 0%, #0d1b2e 60%, #091a2c 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 28px 40px 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+  }
+
+  .header-left { display: flex; align-items: center; gap: 16px; }
+
+  .header-badge {
+    background: var(--accent);
+    color: #000;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    padding: 4px 10px;
+    border-radius: 4px;
+  }
+
+  .header h1 {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: #fff;
+  }
+
+  .header h1 span { color: var(--accent); }
+
+  .header-right {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    text-align: right;
+    line-height: 1.6;
+  }
+
+  /* NAV TABS */
+  .nav-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 16px 40px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+  }
+
+  .nav-tab {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 8px 18px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    color: var(--muted);
+    background: transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .nav-tab:hover { color: var(--text); border-color: var(--border); }
+  .nav-tab.active {
+    color: var(--accent);
+    background: rgba(0,200,160,0.08);
+    border-color: rgba(0,200,160,0.3);
+  }
+
+  /* MAIN */
+  .main { padding: 32px 40px; max-width: 1600px; margin: 0 auto; }
+
+  /* SECTION */
+  .section { display: none; animation: fadeIn 0.35s ease; }
+  .section.active { display: block; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* KPI CARDS */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 22px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+
+  .kpi-card:hover { transform: translateY(-2px); border-color: var(--accent); }
+
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--color, var(--accent));
+  }
+
+  .kpi-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .kpi-value {
+    font-size: 32px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+  }
+
+  .kpi-sub {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+
+  .kpi-pill {
+    display: inline-block;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin-top: 8px;
+  }
+
+  /* CHARTS GRID */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+
+  .charts-grid.three { grid-template-columns: 2fr 1fr; }
+  .charts-grid.full { grid-template-columns: 1fr; }
+
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px;
+    transition: border-color 0.2s;
+  }
+
+  .chart-card:hover { border-color: rgba(0,200,160,0.25); }
+
+  .chart-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .chart-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    margin-bottom: 18px;
+    letter-spacing: 0.5px;
+  }
+
+  .chart-wrap { position: relative; height: 260px; }
+  .chart-wrap.tall { height: 320px; }
+  .chart-wrap.short { height: 200px; }
+
+  /* MATRIX TABLE */
+  .matrix-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+
+  .matrix-header {
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .matrix-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .matrix-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  .matrix-table-wrap { overflow-x: auto; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+  }
+
+  thead tr { background: var(--surface2); }
+
+  th {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 11px 16px;
+    border-bottom: 1px solid rgba(31,45,69,0.6);
+    color: var(--text);
+    white-space: nowrap;
+  }
+
+  tr:last-child td { border-bottom: none; }
+
+  tbody tr { transition: background 0.15s; }
+  tbody tr:hover { background: rgba(255,255,255,0.025); }
+
+  tbody tr:last-child td {
+    font-weight: 700;
+    background: var(--surface2);
+    color: var(--accent);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    border-top: 1px solid var(--border);
+  }
+
+  .heat-cell {
+    border-radius: 6px;
+    padding: 4px 10px;
+    display: inline-block;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .bar-inline {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .bar-track {
+    flex: 1;
+    height: 6px;
+    background: rgba(255,255,255,0.07);
+    border-radius: 3px;
+    min-width: 80px;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 1s ease;
+  }
+
+  .bar-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text);
+    min-width: 36px;
+    text-align: right;
+  }
+
+  /* SECTION HEADINGS */
+  .section-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .section-head h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .section-head .tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--accent);
+    background: rgba(0,200,160,0.08);
+    border: 1px solid rgba(0,200,160,0.2);
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: 1px;
+  }
+
+  /* PROGRESS BARS */
+  .progress-stack { display: flex; flex-direction: column; gap: 10px; }
+
+  .prog-row { display: flex; flex-direction: column; gap: 5px; }
+
+  .prog-label-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+  }
+
+  .prog-name { color: var(--text); font-weight: 500; }
+  .prog-val { color: var(--muted); font-family: 'DM Mono', monospace; font-size: 11px; }
+
+  .prog-track {
+    height: 8px;
+    background: rgba(255,255,255,0.07);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .prog-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 1.2s ease;
+  }
+
+  /* STAT STRIP */
+  .stat-strip {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+
+  .stat-item {
+    background: var(--surface);
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .stat-item-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .stat-item-value { font-size: 26px; font-weight: 800; color: #fff; }
+  .stat-item-sub { font-size: 12px; color: var(--muted); }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* BLOCK FILTER */
+  .block-filter-wrap {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 40px;
+    background: #0d1220;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .block-filter-label {
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--muted); white-space: nowrap;
+  }
+  .block-filter-select {
+    appearance: none; -webkit-appearance: none;
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); font-family: 'DM Mono', monospace; font-size: 12px;
+    padding: 7px 36px 7px 14px; border-radius: 8px; cursor: pointer; outline: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center;
+    transition: border-color 0.2s, box-shadow 0.2s; min-width: 210px;
+  }
+  .block-filter-select:hover { border-color: var(--accent); }
+  .block-filter-select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,200,160,0.12); }
+  .block-filter-select option { background: #1a2236; color: var(--text); }
+  .block-filter-badge {
+    font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1px;
+    color: var(--accent); background: rgba(0,200,160,0.08);
+    border: 1px solid rgba(0,200,160,0.25); padding: 4px 12px; border-radius: 20px;
+  }
+  .filter-reset-btn {
+    font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1px;
+    color: var(--muted); background: transparent; border: 1px solid var(--border);
+    padding: 6px 14px; border-radius: 8px; cursor: pointer; transition: all 0.2s;
+  }
+  .filter-reset-btn:hover { color: var(--text); border-color: var(--accent); }
+  .block-spotlight {
+    display: none; background: linear-gradient(135deg,#0d1b2e,#111827);
+    border: 1px solid rgba(0,200,160,0.3); border-radius: 14px;
+    padding: 22px 26px; margin-bottom: 24px; animation: fadeIn 0.3s ease;
+  }
+  .block-spotlight.visible { display: block; }
+  .spotlight-title { font-size: 18px; font-weight: 800; color: var(--accent); margin-bottom: 14px; }
+  .spotlight-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(150px,1fr)); gap: 12px; }
+  .spotlight-item { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .spotlight-item-label { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+  .spotlight-item-val { font-size:22px; font-weight:800; color:#fff; }
+  .spotlight-item-sub { font-size:11px; color:var(--muted); margin-top:3px; }
+  tr.filtered-out { display: none; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="header-badge">M&E</div>
+    <h1>AAP <span>Dashboard</span> — WKH</h1>
+  </div>
+  <div class="header-right">
+    REPORTING PERIOD: APRIL 2026<br>WEST KHASI HILLS · 5 BLOCKS
+  </div>
+</div>
+
+<nav class="nav-tabs">
+  <button class="nav-tab active" onclick="switchTab('overview', this)">Overview</button>
+  <button class="nav-tab" onclick="switchTab('shg', this)">SHG Profiling</button>
+  <button class="nav-tab" onclick="switchTab('vo', this)">VO / CLF</button>
+  <button class="nav-tab" onclick="switchTab('transactions', this)">Transactions</button>
+  <button class="nav-tab" onclick="switchTab('mobile', this)">Mobile & Bank</button>
+  <button class="nav-tab" onclick="switchTab('saturation', this)">SHG Saturation</button>
+  <button class="nav-tab" onclick="switchTab('matrix', this)">Full Matrix</button>
+</nav>
+
+<div class="block-filter-wrap">
+  <span class="block-filter-label">Filter by Block:</span>
+  <select class="block-filter-select" id="blockFilter" onchange="applyBlockFilter()">
+    <option value="ALL">All Blocks (District-wide)</option>
+    <option value="0">MAWSHYNRUT</option>
+    <option value="1">NONGSTOIN</option>
+    <option value="2">RAMBRAI</option>
+    <option value="3">RI-MULIANG</option>
+    <option value="4">SHALLANG</option>
+  </select>
+  <span class="block-filter-badge" id="filterBadge">ALL 5 BLOCKS</span>
+  <button class="filter-reset-btn" onclick="resetFilter()">✕ Reset</button>
+</div>
+
+<div class="main">
+
+  <!-- ===== OVERVIEW ===== -->
+  <div id="tab-overview" class="section active">
+    <div id="spotlight-overview" class="block-spotlight">
+      <div class="spotlight-title" id="spotlight-overview-title">📍 Block Name</div>
+      <div class="spotlight-grid" id="spotlight-overview-grid"></div>
+    </div>
+    <div class="section-head">
+      <h2>Overview</h2>
+      <span class="tag">CONSOLIDATED · MARCH 2026</span>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-card" style="--color:#00c8a0">
+        <div class="kpi-label">Total SHG (LokOS)</div>
+        <div class="kpi-value">3,222</div>
+        <div class="kpi-sub">Approved: 2,607 · Pending: 615</div>
+        <div class="kpi-pill" style="background:rgba(0,200,160,0.12);color:var(--accent)">80.9% Approved</div>
+      </div>
+      <div class="kpi-card" style="--color:#3b82f6">
+        <div class="kpi-label">Total VO (LokOS)</div>
+        <div class="kpi-value">419</div>
+        <div class="kpi-sub">Approved: 324 · Pending: 95</div>
+        <div class="kpi-pill" style="background:rgba(59,130,246,0.12);color:var(--accent2)">77.3% Approved</div>
+      </div>
+      <div class="kpi-card" style="--color:#f59e0b">
+        <div class="kpi-label">Total CLF</div>
+        <div class="kpi-value">27</div>
+        <div class="kpi-sub">Approved: 26 · Pending: 1</div>
+        <div class="kpi-pill" style="background:rgba(245,158,11,0.12);color:var(--accent3)">96.3% Approved</div>
+      </div>
+      <div class="kpi-card" style="--color:#10b981">
+        <div class="kpi-label">Active SHG Members</div>
+        <div class="kpi-value">25,901</div>
+        <div class="kpi-sub">3,156 Active SHGs · 5 Blocks</div>
+        <div class="kpi-pill" style="background:rgba(16,185,129,0.12);color:#10b981">Mob Entry: 69.8%</div>
+      </div>
+      <div class="kpi-card" style="--color:#ef4444">
+        <div class="kpi-label">Rejected SHG</div>
+        <div class="kpi-value">2</div>
+        <div class="kpi-sub">843 Rejected Members</div>
+        <div class="kpi-pill" style="background:rgba(239,68,68,0.12);color:var(--red)">Mawshynrut, Shallang</div>
+      </div>
+      <div class="kpi-card" style="--color:#8b5cf6">
+        <div class="kpi-label">Unmapped SHG</div>
+        <div class="kpi-value">173</div>
+        <div class="kpi-sub">4 Unmapped VOs</div>
+        <div class="kpi-pill" style="background:rgba(139,92,246,0.12);color:#a78bfa">Needs Attention</div>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">SHG Approval Status by Block</div>
+        <div class="chart-sub">APPROVED vs PENDING · ALL 5 BLOCKS</div>
+        <div class="chart-wrap">
+          <canvas id="shgApprovalBar"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">SHG Approval Distribution</div>
+        <div class="chart-sub">OVERALL SPLIT</div>
+        <div class="chart-wrap">
+          <canvas id="shgPie"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">VO Approval Status by Block</div>
+        <div class="chart-sub">APPROVED vs PENDING</div>
+        <div class="chart-wrap">
+          <canvas id="voApprovalBar"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">CLF Transaction Completion</div>
+        <div class="chart-sub">COMPLETED vs PENDING · MARCH 2026</div>
+        <div class="chart-wrap">
+          <canvas id="clfBar"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SHG PROFILING ===== -->
+  <div id="tab-shg" class="section">
+    <div class="section-head">
+      <h2>SHG Profiling</h2>
+      <span class="tag">CBO PROFILING · MEMBERS</span>
+    </div>
+
+    <div class="stat-strip">
+      <div class="stat-item">
+        <div class="stat-item-label">Total SHG</div>
+        <div class="stat-item-value" style="color:var(--accent)">3,222</div>
+        <div class="stat-item-sub">Across 5 blocks</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-item-label">Approved</div>
+        <div class="stat-item-value" style="color:var(--green)">2,607</div>
+        <div class="stat-item-sub">80.9% of total</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-item-label">Pending</div>
+        <div class="stat-item-value" style="color:var(--yellow)">615</div>
+        <div class="stat-item-sub">19.1% of total</div>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">Block-wise SHG Count</div>
+        <div class="chart-sub">TOTAL, APPROVED & PENDING</div>
+        <div class="chart-wrap tall">
+          <canvas id="shgBlockStacked"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Approval Rate by Block (%)</div>
+        <div class="chart-sub">SHG APPROVAL PERCENTAGE</div>
+        <div class="chart-wrap tall">
+          <canvas id="shgApprovalRate"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- SHG Matrix -->
+    <div class="matrix-wrap">
+      <div class="matrix-header">
+        <div class="matrix-title">CBO Profiling — SHG Matrix</div>
+        <div class="matrix-badge">BLOCK-WISE DETAIL</div>
+      </div>
+      <div class="matrix-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Block</th>
+              <th>Total SHG</th>
+              <th>Approved</th>
+              <th>Pending</th>
+              <th>Approval Rate</th>
+              <th>Progress</th>
+            </tr>
+          </thead>
+          <tbody id="shg-matrix-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">SHG Saturation — Member Status (Migrated SISD)</div>
+        <div class="chart-sub">ACTIVE / INACTIVE / DEFAULT</div>
+        <div class="chart-wrap">
+          <canvas id="saturationBar"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Member Status Distribution</div>
+        <div class="chart-sub">MIGRATED SISD · TOTALS</div>
+        <div class="chart-wrap">
+          <canvas id="memberStatusPie"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== VO / CLF ===== -->
+  <div id="tab-vo" class="section">
+    <div class="section-head">
+      <h2>VO & CLF Profiling</h2>
+      <span class="tag">VILLAGE ORGANISATIONS · CLUSTER LEVEL</span>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-card" style="--color:#3b82f6">
+        <div class="kpi-label">Total VO</div>
+        <div class="kpi-value">419</div>
+        <div class="kpi-sub">Approved: 324</div>
+      </div>
+      <div class="kpi-card" style="--color:#8b5cf6">
+        <div class="kpi-label">Loose VOs</div>
+        <div class="kpi-value">55</div>
+        <div class="kpi-sub">Not linked to CLF</div>
+      </div>
+      <div class="kpi-card" style="--color:#f59e0b">
+        <div class="kpi-label">Total CLF</div>
+        <div class="kpi-value">27</div>
+        <div class="kpi-sub">26 Approved · 1 Pending</div>
+      </div>
+      <div class="kpi-card" style="--color:#10b981">
+        <div class="kpi-label">VO Transactions Done</div>
+        <div class="kpi-value">22</div>
+        <div class="kpi-sub">Out of 419 VOs · 5% complete</div>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">VO Profiling by Block</div>
+        <div class="chart-sub">TOTAL vs APPROVED vs PENDING</div>
+        <div class="chart-wrap tall">
+          <canvas id="voBlockBar"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Loose VO Distribution</div>
+        <div class="chart-sub">BY BLOCK</div>
+        <div class="chart-wrap tall">
+          <canvas id="looseVoPie"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">CLF Profiling by Block</div>
+        <div class="chart-sub">TOTAL vs APPROVED vs PENDING</div>
+        <div class="chart-wrap">
+          <canvas id="clfProfileBar"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Unmapped SHG & VO</div>
+        <div class="chart-sub">MAPPING STATUS</div>
+        <div class="chart-wrap">
+          <canvas id="unmappedBar"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- VO Matrix -->
+    <div class="matrix-wrap">
+      <div class="matrix-header">
+        <div class="matrix-title">CBO Profiling — VO Matrix</div>
+        <div class="matrix-badge">BLOCK-WISE DETAIL</div>
+      </div>
+      <div class="matrix-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Block</th>
+              <th>Total VO</th>
+              <th>Approved</th>
+              <th>Pending</th>
+              <th>Loose VO</th>
+              <th>Approval %</th>
+            </tr>
+          </thead>
+          <tbody id="vo-matrix-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TRANSACTIONS ===== -->
+  <div id="tab-transactions" class="section">
+    <div class="section-head">
+      <h2>Transactions</h2>
+      <span class="tag">CLF & VO · MARCH 2026</span>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">CLF Transaction Status by Block</div>
+        <div class="chart-sub">COMPLETED vs PENDING · MARCH 2026</div>
+        <div class="chart-wrap tall">
+          <canvas id="clfTxnBar"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">CLF Transaction Completion Rate</div>
+        <div class="chart-sub">% COMPLETED BY BLOCK</div>
+        <div class="chart-wrap tall">
+          <canvas id="clfTxnRate"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">VO Transaction Progress</div>
+        <div class="chart-sub">STARTED vs COMPLETED · MARCH 2026</div>
+        <div class="chart-wrap">
+          <canvas id="voTxnBar"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">VO Completion Rate by Block (%)</div>
+        <div class="chart-sub">% OF VOs WITH COMPLETED TRANSACTIONS</div>
+        <div class="chart-wrap">
+          <canvas id="voTxnRate"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Transaction Matrix -->
+    <div class="matrix-wrap">
+      <div class="matrix-header">
+        <div class="matrix-title">Transaction Status Matrix — VO Detail</div>
+        <div class="matrix-badge">MARCH 2026</div>
+      </div>
+      <div class="matrix-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Block</th>
+              <th>Total VO</th>
+              <th>Started Txn</th>
+              <th>Completed Txn</th>
+              <th>Completion %</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="txn-matrix-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MOBILE & BANK ===== -->
+  <div id="tab-mobile" class="section">
+    <div class="section-head">
+      <h2>Mobile & Bank Registration</h2>
+      <span class="tag">OB MOBILE · BANK STATUS</span>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-card" style="--color:#00c8a0">
+        <div class="kpi-label">Active SHGs</div>
+        <div class="kpi-value">3,156</div>
+        <div class="kpi-sub">Across all 5 blocks</div>
+      </div>
+      <div class="kpi-card" style="--color:#3b82f6">
+        <div class="kpi-label">Active Members</div>
+        <div class="kpi-value">25,901</div>
+        <div class="kpi-sub">Total enrolled members</div>
+      </div>
+      <div class="kpi-card" style="--color:#f59e0b">
+        <div class="kpi-label">Mob No. Entry</div>
+        <div class="kpi-value">69.8%</div>
+        <div class="kpi-sub">18,069 of 25,901</div>
+      </div>
+      <div class="kpi-card" style="--color:#ef4444">
+        <div class="kpi-label">Mob No. Verified</div>
+        <div class="kpi-value">39.4%</div>
+        <div class="kpi-sub">7,119 numbers verified</div>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">Mobile Entry & Verification Rate by Block</div>
+        <div class="chart-sub">% MOB ENTRY vs % VERIFIED</div>
+        <div class="chart-wrap tall">
+          <canvas id="mobBar"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Member Mobile Entry Funnel</div>
+        <div class="chart-sub">ACTIVE → ENTERED → VERIFIED</div>
+        <div class="chart-wrap tall">
+          <canvas id="mobFunnel"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-card" style="margin-bottom:24px">
+      <div class="chart-title">Block-wise Mobile Entry Progress</div>
+      <div class="chart-sub">COMPLETION % WITH ABSOLUTE COUNTS</div>
+      <div style="padding: 12px 0;">
+        <div class="progress-stack" id="mob-progress"></div>
+      </div>
+    </div>
+
+    <!-- Bank Matrix -->
+    <div class="matrix-wrap">
+      <div class="matrix-header">
+        <div class="matrix-title">SHG Bank Registration Status</div>
+        <div class="matrix-badge">MIGRATED & LOKOS</div>
+      </div>
+      <div class="matrix-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Block</th>
+              <th>SHG w/o A/c (Migrated)</th>
+              <th>Members w/o A/c (Migrated)</th>
+              <th>SHG w/o A/c (LokOS)</th>
+              <th>Members w/o A/c (LokOS)</th>
+              <th>Risk Level</th>
+            </tr>
+          </thead>
+          <tbody id="bank-matrix-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SHG SATURATION ===== -->
+  <div id="tab-saturation" class="section">
+    <div class="section-head">
+      <h2>SHG Saturation</h2>
+      <span class="tag">MIGRATED SISD · ACTUAL SISD</span>
+    </div>
+
+    <!-- ── Migrated SISD KPIs ── -->
+    <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:12px;">● Slide 10 — SHG Saturation Migrated SISD</div>
+
+    <div class="stat-strip" style="margin-bottom:20px">
+      <div class="stat-item">
+        <div class="stat-item-label">Active Members</div>
+        <div class="stat-item-value" style="color:var(--accent)">1,933</div>
+        <div class="stat-item-sub">46.23% of total</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-item-label">Default Status</div>
+        <div class="stat-item-value" style="color:var(--yellow)">1,142</div>
+        <div class="stat-item-sub">27.31% — Select Active</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-item-label">Inactive Members</div>
+        <div class="stat-item-value" style="color:var(--red)">1,106</div>
+        <div class="stat-item-sub">26.45% of total</div>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">Member Status by Block — Migrated SISD</div>
+        <div class="chart-sub">ACTIVE / INACTIVE / DEFAULT COUNT PER BLOCK</div>
+        <div class="chart-wrap tall">
+          <canvas id="migSatBar"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Overall Member Status Split</div>
+        <div class="chart-sub">MIGRATED SISD · 4,181 TOTAL MEMBERS</div>
+        <div class="chart-wrap tall">
+          <canvas id="migSatPie"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">LOKOS Profiling Status — Migrated SISD</div>
+        <div class="chart-sub">COMPLETED vs PENDING BY BLOCK</div>
+        <div class="chart-wrap">
+          <canvas id="migProfilingBar"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Profiling Completion Rate</div>
+        <div class="chart-sub">% PROFILE COMPLETED IN LOKOS</div>
+        <div class="chart-wrap">
+          <canvas id="migProfilingRate"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Migrated SISD Matrix -->
+    <div class="matrix-wrap" style="margin-bottom:32px">
+      <div class="matrix-header">
+        <div class="matrix-title">SHG Saturation Migrated SISD — Block Matrix</div>
+        <div class="matrix-badge">SLIDE 10 · FULL DETAIL</div>
+      </div>
+      <div class="matrix-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Block</th>
+              <th>Active Members</th>
+              <th>Inactive Members</th>
+              <th>Default Status</th>
+              <th>Profile Completed (LokOS)</th>
+              <th>Profiling Pending (LokOS)</th>
+              <th>Completion %</th>
+            </tr>
+          </thead>
+          <tbody id="mig-sisd-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Actual SISD ── -->
+    <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:12px;margin-top:8px;">● Slide 11 — SHG Saturation Actual SISD</div>
+
+    <div class="kpi-grid" style="margin-bottom:20px">
+      <div class="kpi-card" style="--color:#00c8a0">
+        <div class="kpi-label">Newly Potential SHGs</div>
+        <div class="kpi-value">167</div>
+        <div class="kpi-sub">Registered across all blocks</div>
+      </div>
+      <div class="kpi-card" style="--color:#f43f5e">
+        <div class="kpi-label">Non-Potential SHGs</div>
+        <div class="kpi-value">75</div>
+        <div class="kpi-sub">Newly identified</div>
+      </div>
+      <div class="kpi-card" style="--color:#3b82f6">
+        <div class="kpi-label">SHG Reg. Completed</div>
+        <div class="kpi-value">95</div>
+        <div class="kpi-sub">in LokOS</div>
+      </div>
+      <div class="kpi-card" style="--color:#f59e0b">
+        <div class="kpi-label">Newly Potential Members</div>
+        <div class="kpi-value">843</div>
+        <div class="kpi-sub">Total registrations</div>
+      </div>
+      <div class="kpi-card" style="--color:#8b5cf6">
+        <div class="kpi-label">Member Reg. Completed</div>
+        <div class="kpi-value">609</div>
+        <div class="kpi-sub">in LokOS · 218 Pending</div>
+      </div>
+      <div class="kpi-card" style="--color:#10b981">
+        <div class="kpi-label">SHG Reg. Pending</div>
+        <div class="kpi-value">45</div>
+        <div class="kpi-sub">Awaiting LokOS entry</div>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">Newly Identified SHGs — Potential vs Non-Potential</div>
+        <div class="chart-sub">ACTUAL SISD · BY BLOCK</div>
+        <div class="chart-wrap tall">
+          <canvas id="actSHGBar"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">SHG Registration Status in LokOS</div>
+        <div class="chart-sub">COMPLETED vs PENDING BY BLOCK</div>
+        <div class="chart-wrap tall">
+          <canvas id="actSHGRegBar"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">Member Registration — Potential vs Non-Potential</div>
+        <div class="chart-sub">ACTUAL SISD · MEMBER COUNTS</div>
+        <div class="chart-wrap">
+          <canvas id="actMbrBar"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Member Registration Completion</div>
+        <div class="chart-sub">COMPLETED vs PENDING IN LOKOS</div>
+        <div class="chart-wrap">
+          <canvas id="actMbrRegBar"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actual SISD Matrix -->
+    <div class="matrix-wrap">
+      <div class="matrix-header">
+        <div class="matrix-title">SHG Saturation Actual SISD — Block Matrix</div>
+        <div class="matrix-badge">SLIDE 11 · FULL DETAIL</div>
+      </div>
+      <div class="matrix-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Block</th>
+              <th>New Potential SHG</th>
+              <th>Non-Potential SHG</th>
+              <th>SHG Reg. Done</th>
+              <th>SHG Reg. Pending</th>
+              <th>New Potential Mbr</th>
+              <th>Non-Potential Mbr</th>
+              <th>Mbr Reg. Done</th>
+              <th>Mbr Reg. Pending</th>
+            </tr>
+          </thead>
+          <tbody id="act-sisd-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== FULL MATRIX ===== -->
+  <div id="tab-matrix" class="section">
+    <div class="section-head">
+      <h2>Full Data Matrix</h2>
+      <span class="tag">ALL INDICATORS · ALL BLOCKS</span>
+    </div>
+
+    <div class="matrix-wrap" style="margin-bottom:24px">
+      <div class="matrix-header">
+        <div class="matrix-title">Comprehensive Block Performance Matrix</div>
+        <div class="matrix-badge">M&E AAP · APRIL 2026</div>
+      </div>
+      <div class="matrix-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Block</th>
+              <th>SHG Total</th>
+              <th>SHG Approved</th>
+              <th>SHG Pending</th>
+              <th>VO Total</th>
+              <th>VO Approved</th>
+              <th>CLF Total</th>
+              <th>CLF Txn Done</th>
+              <th>Active SHG</th>
+              <th>Active Mbr</th>
+              <th>Mob Entry%</th>
+              <th>Mob Ver%</th>
+            </tr>
+          </thead>
+          <tbody id="full-matrix-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">Multi-Indicator Radar by Block</div>
+        <div class="chart-sub">NORMALIZED PERFORMANCE ACROSS KEY METRICS</div>
+        <div class="chart-wrap tall">
+          <canvas id="radarChart"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Overall Approval Distribution</div>
+        <div class="chart-sub">SHG · VO · CLF COMBINED APPROVALS</div>
+        <div class="chart-wrap tall">
+          <canvas id="overallPie"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const BLOCKS = ['MAWSHYNRUT', 'NONGSTOIN', 'RAMBRAI', 'RI-MULIANG', 'SHALLANG'];
+const SHORT = ['MWS', 'NGS', 'RBR', 'RMU', 'SHL'];
+const COLORS = ['#00c8a0', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'];
+const C_APPROVED = '#00c8a0';
+const C_PENDING = '#f43f5e';
+const C_ALT = '#3b82f6';
+
+// DATA
+const shgData = {
+  total: [575, 1433, 562, 341, 311],
+  approved: [482, 1168, 404, 282, 271],
+  pending: [93, 265, 158, 59, 40]
+};
+const voData = {
+  total: [102, 158, 73, 55, 31],
+  approved: [84, 122, 52, 45, 21],
+  pending: [18, 36, 21, 10, 10],
+  loose: [14, 24, 6, 6, 5]
+};
+const clfData = {
+  total: [7, 10, 5, 4, 1],
+  approved: [6, 10, 5, 4, 1],
+  pending: [1, 0, 0, 0, 0],
+  txnDone: [5, 7, 2, 0, 0],
+  txnPending: [2, 3, 3, 4, 1]
+};
+const unmappedData = {
+  shg: [56, 33, 10, 66, 8],
+  vo: [3, 0, 0, 0, 1]
+};
+const voTxn = {
+  total: [102, 158, 73, 55, 31],
+  started: [9, 54, 21, 9, 0],
+  completed: [3, 9, 5, 5, 0],
+  pct: [3, 6, 7, 9, 0]
+};
+const saturation = {
+  active: [389, 454, 755, 263, 72],
+  inactive: [261, 296, 272, 190, 87],
+  def: [53, 577, 453, 38, 21]
+};
+const mobData = {
+  activeSHG: [586, 1387, 541, 334, 308],
+  activeMbr: [4915, 11437, 4304, 2739, 2506],
+  mobEntry: [3323, 8519, 2596, 1904, 1727],
+  mobEntryPct: [67.6, 74.5, 60.3, 69.5, 68.9],
+  mobVerPct: [28.5, 43.0, 53.5, 38.2, 22.6],
+  mobVerAbs: [948, 3665, 1389, 727, 390]
+};
+const bankData = {
+  shgMig: [0, 8, 2, 0, 0],
+  mbrMig: [476, 399, 445, 349, 211],
+  shgLok: [0, 3, 1, 4, 3],
+  mbrLok: [151, 203, 88, 61, 135]
+};
+
+Chart.defaults.color = '#64748b';
+Chart.defaults.font.family = 'DM Mono, monospace';
+Chart.defaults.font.size = 11;
+
+const GRID = { color: 'rgba(255,255,255,0.05)', drawBorder: false };
+const LEGEND = { labels: { color: '#94a3b8', padding: 16, font: { size: 11 }, usePointStyle: true, pointStyleWidth: 8 } };
+
+function makeBar(id, labels, datasets, opts = {}) {
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  // deep-clone for filter restore
+  ALL_CHART_CONFIGS[id] = { labels: [...labels], datasets: datasets.map(d => ({...d, data:[...d.data]})) };
+  return new Chart(ctx, {
+    type: 'bar',
+    data: { labels: [...labels], datasets: datasets.map(d=>({...d,data:[...d.data]})) },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: LEGEND, tooltip: { backgroundColor: '#1a2236', borderColor: '#1f2d45', borderWidth: 1, titleColor: '#e2e8f0', bodyColor: '#94a3b8', padding: 10 } },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: '#64748b' }, stacked: opts.stacked || false },
+        y: { grid: GRID, ticks: { color: '#64748b' }, stacked: opts.stacked || false, beginAtZero: true, max: opts.max }
+      }
+    }
+  });
+}
+
+function makePie(id, labels, data, colors) {
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  ALL_CHART_CONFIGS[id] = { labels: [...labels], datasets: [{ data: [...data], backgroundColor: colors, borderColor: '#0b0f1a', borderWidth: 3, hoverOffset: 8 }] };
+  return new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels: [...labels], datasets: [{ data: [...data], backgroundColor: colors, borderColor: '#0b0f1a', borderWidth: 3, hoverOffset: 8 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '60%',
+      plugins: {
+        legend: { ...LEGEND, position: 'right' },
+        tooltip: { backgroundColor: '#1a2236', borderColor: '#1f2d45', borderWidth: 1, titleColor: '#e2e8f0', bodyColor: '#94a3b8' }
+      }
+    }
+  });
+}
+
+function makeHorizBar(id, labels, datasets, opts = {}) {
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  ALL_CHART_CONFIGS[id] = { labels: [...labels], datasets: datasets.map(d => ({...d, data:[...d.data]})) };
+  return new Chart(ctx, {
+    type: 'bar',
+    data: { labels: [...labels], datasets: datasets.map(d=>({...d,data:[...d.data]})) },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: LEGEND, tooltip: { backgroundColor: '#1a2236', borderColor: '#1f2d45', borderWidth: 1, titleColor: '#e2e8f0', bodyColor: '#94a3b8', padding: 10 } },
+      scales: {
+        x: { grid: GRID, ticks: { color: '#64748b' }, beginAtZero: true, max: opts.max },
+        y: { grid: { display: false }, ticks: { color: '#64748b' } }
+      }
+    }
+  });
+}
+
+// Heatmap color
+function heatColor(pct) {
+  if (pct >= 90) return { bg: 'rgba(16,185,129,0.15)', color: '#10b981' };
+  if (pct >= 70) return { bg: 'rgba(0,200,160,0.1)', color: '#00c8a0' };
+  if (pct >= 50) return { bg: 'rgba(251,191,36,0.12)', color: '#fbbf24' };
+  return { bg: 'rgba(244,63,94,0.12)', color: '#f43f5e' };
+}
+
+function riskColor(val) {
+  if (val === 0) return { bg: 'rgba(16,185,129,0.15)', color: '#10b981', label: 'Low' };
+  if (val <= 5) return { bg: 'rgba(251,191,36,0.12)', color: '#fbbf24', label: 'Medium' };
+  return { bg: 'rgba(244,63,94,0.12)', color: '#f43f5e', label: 'High' };
+}
+
+// Init all charts once
+function initCharts() {
+  // Overview
+  makeBar('shgApprovalBar', SHORT,
+    [{ label: 'Approved', data: shgData.approved, backgroundColor: C_APPROVED, borderRadius: 4 },
+     { label: 'Pending', data: shgData.pending, backgroundColor: '#f43f5e', borderRadius: 4 }]);
+
+  makePie('shgPie', ['Approved (2,607)', 'Pending (615)'],
+    [2607, 615], [C_APPROVED, '#f43f5e']);
+
+  makeBar('voApprovalBar', SHORT,
+    [{ label: 'Approved', data: voData.approved, backgroundColor: C_ALT, borderRadius: 4 },
+     { label: 'Pending', data: voData.pending, backgroundColor: '#f59e0b', borderRadius: 4 }]);
+
+  makeBar('clfBar', SHORT,
+    [{ label: 'Completed', data: clfData.txnDone, backgroundColor: C_APPROVED, borderRadius: 4 },
+     { label: 'Pending', data: clfData.txnPending, backgroundColor: '#f43f5e', borderRadius: 4 }]);
+
+  // SHG
+  makeBar('shgBlockStacked', SHORT,
+    [{ label: 'Approved', data: shgData.approved, backgroundColor: C_APPROVED, borderRadius: 4 },
+     { label: 'Pending', data: shgData.pending, backgroundColor: '#f43f5e', borderRadius: 4 }],
+    { stacked: true });
+
+  makeHorizBar('shgApprovalRate', BLOCKS,
+    [{ label: 'Approval %', data: shgData.approved.map((v,i)=>Math.round(v/shgData.total[i]*100)),
+       backgroundColor: COLORS, borderRadius: 4 }], { max: 100 });
+
+  makeBar('saturationBar', SHORT,
+    [{ label: 'Active', data: saturation.active, backgroundColor: C_APPROVED, borderRadius: 4 },
+     { label: 'Inactive', data: saturation.inactive, backgroundColor: '#f59e0b', borderRadius: 4 },
+     { label: 'Default', data: saturation.def, backgroundColor: '#f43f5e', borderRadius: 4 }]);
+
+  makePie('memberStatusPie',
+    ['Active (1,933)', 'Default (1,142)', 'Inactive (1,106)'],
+    [1933, 1142, 1106], [C_APPROVED, '#f59e0b', '#f43f5e']);
+
+  // VO/CLF
+  makeBar('voBlockBar', SHORT,
+    [{ label: 'Total', data: voData.total, backgroundColor: 'rgba(59,130,246,0.4)', borderRadius: 4 },
+     { label: 'Approved', data: voData.approved, backgroundColor: C_ALT, borderRadius: 4 },
+     { label: 'Pending', data: voData.pending, backgroundColor: '#f43f5e', borderRadius: 4 }]);
+
+  makePie('looseVoPie', BLOCKS, voData.loose, COLORS);
+
+  makeBar('clfProfileBar', SHORT,
+    [{ label: 'Total', data: clfData.total, backgroundColor: 'rgba(245,158,11,0.4)', borderRadius: 4 },
+     { label: 'Approved', data: clfData.approved, backgroundColor: '#f59e0b', borderRadius: 4 },
+     { label: 'Pending', data: clfData.pending, backgroundColor: '#f43f5e', borderRadius: 4 }]);
+
+  makeBar('unmappedBar', SHORT,
+    [{ label: 'Unmapped SHG', data: unmappedData.shg, backgroundColor: '#8b5cf6', borderRadius: 4 },
+     { label: 'Unmapped VO', data: unmappedData.vo, backgroundColor: '#ec4899', borderRadius: 4 }]);
+
+  // Transactions
+  makeBar('clfTxnBar', SHORT,
+    [{ label: 'CLF Txn Done', data: clfData.txnDone, backgroundColor: C_APPROVED, borderRadius: 4 },
+     { label: 'CLF Pending', data: clfData.txnPending, backgroundColor: '#f43f5e', borderRadius: 4 }]);
+
+  makeHorizBar('clfTxnRate', BLOCKS,
+    [{ label: 'Completion %', data: clfData.txnDone.map((v,i)=>Math.round(v/clfData.total[i]*100)),
+       backgroundColor: COLORS, borderRadius: 4 }], { max: 100 });
+
+  makeBar('voTxnBar', SHORT,
+    [{ label: 'Started', data: voTxn.started, backgroundColor: C_ALT, borderRadius: 4 },
+     { label: 'Completed', data: voTxn.completed, backgroundColor: C_APPROVED, borderRadius: 4 }]);
+
+  makeHorizBar('voTxnRate', BLOCKS,
+    [{ label: '% Completed', data: voTxn.pct, backgroundColor: COLORS, borderRadius: 4 }], { max: 15 });
+
+  // Mobile
+  makeBar('mobBar', SHORT,
+    [{ label: 'Mob Entry %', data: mobData.mobEntryPct, backgroundColor: C_ALT, borderRadius: 4 },
+     { label: 'Mob Verified %', data: mobData.mobVerPct, backgroundColor: C_APPROVED, borderRadius: 4 }]);
+
+  makeBar('mobFunnel', SHORT,
+    [{ label: 'Active Members', data: mobData.activeMbr, backgroundColor: 'rgba(99,102,241,0.5)', borderRadius: 4 },
+     { label: 'Mob Entry', data: mobData.mobEntry, backgroundColor: C_ALT, borderRadius: 4 },
+     { label: 'Mob Verified', data: mobData.mobVerAbs, backgroundColor: C_APPROVED, borderRadius: 4 }]);
+
+  // Radar
+  const ctx = document.getElementById('radarChart');
+  if (ctx) {
+    new Chart(ctx, {
+      type: 'radar',
+      data: {
+        labels: ['SHG Approval%', 'VO Approval%', 'CLF Txn%', 'Mob Entry%', 'Mob Verified%', 'VO Txn%'],
+        datasets: BLOCKS.map((b, i) => ({
+          label: SHORT[i],
+          data: [
+            Math.round(shgData.approved[i]/shgData.total[i]*100),
+            Math.round(voData.approved[i]/voData.total[i]*100),
+            Math.round(clfData.txnDone[i]/clfData.total[i]*100),
+            mobData.mobEntryPct[i],
+            mobData.mobVerPct[i],
+            voTxn.pct[i]
+          ],
+          borderColor: COLORS[i],
+          backgroundColor: COLORS[i].replace(')', ', 0.08)').replace('#', 'rgba('),
+          pointBackgroundColor: COLORS[i],
+          borderWidth: 2,
+          pointRadius: 4
+        }))
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        scales: {
+          r: {
+            grid: { color: 'rgba(255,255,255,0.07)' },
+            angleLines: { color: 'rgba(255,255,255,0.07)' },
+            ticks: { color: '#64748b', backdropColor: 'transparent', stepSize: 20 },
+            pointLabels: { color: '#94a3b8', font: { size: 11 } },
+            min: 0, max: 100
+          }
+        },
+        plugins: { legend: LEGEND }
+      }
+    });
+  }
+
+  makePie('overallPie',
+    ['SHG Approved', 'SHG Pending', 'VO Approved', 'VO Pending', 'CLF Approved'],
+    [2607, 615, 324, 95, 26],
+    [C_APPROVED, '#1a4a3a', C_ALT, '#1a2d4a', '#f59e0b']);
+
+  // Populate tables
+  buildSHGMatrix();
+  buildVOMatrix();
+  buildTxnMatrix();
+  buildBankMatrix();
+  buildFullMatrix();
+  buildMobProgress();
+  initSaturationCharts();
+}
+
+function buildSHGMatrix() {
+  const tbody = document.getElementById('shg-matrix-body');
+  tbody.setAttribute('data-filterable','true');
+  BLOCKS.forEach((b, i) => {
+    const pct = Math.round(shgData.approved[i]/shgData.total[i]*100);
+    const h = heatColor(pct);
+    tbody.innerHTML += `<tr data-block="${i}">
+      <td style="font-weight:600">${b}</td>
+      <td style="font-family:'DM Mono',monospace">${shgData.total[i]}</td>
+      <td style="color:#00c8a0;font-family:'DM Mono',monospace">${shgData.approved[i]}</td>
+      <td style="color:#f43f5e;font-family:'DM Mono',monospace">${shgData.pending[i]}</td>
+      <td><span class="heat-cell" style="background:${h.bg};color:${h.color}">${pct}%</span></td>
+      <td><div class="bar-inline"><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${h.color}"></div></div><span class="bar-label">${pct}%</span></div></td>
+    </tr>`;
+  });
+  tbody.innerHTML += `<tr><td>TOTAL</td><td>3,222</td><td>2,607</td><td>615</td><td><span class="heat-cell" style="background:rgba(0,200,160,0.15);color:#00c8a0">80.9%</span></td><td>—</td></tr>`;
+}
+
+function buildVOMatrix() {
+  const tbody = document.getElementById('vo-matrix-body');
+  tbody.setAttribute('data-filterable','true');
+  BLOCKS.forEach((b, i) => {
+    const pct = Math.round(voData.approved[i]/voData.total[i]*100);
+    const h = heatColor(pct);
+    tbody.innerHTML += `<tr data-block="${i}">
+      <td style="font-weight:600">${b}</td>
+      <td style="font-family:'DM Mono',monospace">${voData.total[i]}</td>
+      <td style="color:#3b82f6;font-family:'DM Mono',monospace">${voData.approved[i]}</td>
+      <td style="color:#f43f5e;font-family:'DM Mono',monospace">${voData.pending[i]}</td>
+      <td style="color:#8b5cf6;font-family:'DM Mono',monospace">${voData.loose[i]}</td>
+      <td><span class="heat-cell" style="background:${h.bg};color:${h.color}">${pct}%</span></td>
+    </tr>`;
+  });
+  tbody.innerHTML += `<tr><td>TOTAL</td><td>419</td><td>324</td><td>95</td><td>55</td><td><span class="heat-cell" style="background:rgba(0,200,160,0.15);color:#00c8a0">77.3%</span></td></tr>`;
+}
+
+function buildTxnMatrix() {
+  const tbody = document.getElementById('txn-matrix-body');
+  tbody.setAttribute('data-filterable','true');
+  BLOCKS.forEach((b, i) => {
+    const pct = voTxn.pct[i];
+    const h = heatColor(pct);
+    const status = pct === 0 ? `<span class="heat-cell" style="background:rgba(244,63,94,0.12);color:#f43f5e">No Txn</span>`
+      : pct < 5 ? `<span class="heat-cell" style="background:rgba(251,191,36,0.12);color:#fbbf24">Low</span>`
+      : `<span class="heat-cell" style="background:rgba(0,200,160,0.1);color:#00c8a0">Active</span>`;
+    tbody.innerHTML += `<tr data-block="${i}">
+      <td style="font-weight:600">${b}</td>
+      <td style="font-family:'DM Mono',monospace">${voTxn.total[i]}</td>
+      <td style="color:#3b82f6;font-family:'DM Mono',monospace">${voTxn.started[i]}</td>
+      <td style="color:#00c8a0;font-family:'DM Mono',monospace">${voTxn.completed[i]}</td>
+      <td><span class="heat-cell" style="background:${h.bg};color:${h.color}">${pct}%</span></td>
+      <td>${status}</td>
+    </tr>`;
+  });
+  tbody.innerHTML += `<tr><td>TOTAL</td><td>419</td><td>93</td><td>22</td><td><span class="heat-cell" style="background:rgba(251,191,36,0.12);color:#fbbf24">5%</span></td><td>—</td></tr>`;
+}
+
+function buildBankMatrix() {
+  const tbody = document.getElementById('bank-matrix-body');
+  tbody.setAttribute('data-filterable','true');
+  BLOCKS.forEach((b, i) => {
+    const risk = riskColor(bankData.shgMig[i] + bankData.shgLok[i]);
+    tbody.innerHTML += `<tr data-block="${i}">
+      <td style="font-weight:600">${b}</td>
+      <td style="font-family:'DM Mono',monospace;color:${bankData.shgMig[i]>0?'#f43f5e':'#10b981'}">${bankData.shgMig[i]}</td>
+      <td style="font-family:'DM Mono',monospace;color:#f59e0b">${bankData.mbrMig[i]}</td>
+      <td style="font-family:'DM Mono',monospace;color:${bankData.shgLok[i]>0?'#f43f5e':'#10b981'}">${bankData.shgLok[i]}</td>
+      <td style="font-family:'DM Mono',monospace;color:#f59e0b">${bankData.mbrLok[i]}</td>
+      <td><span class="heat-cell" style="background:${risk.bg};color:${risk.color}">${risk.label}</span></td>
+    </tr>`;
+  });
+  tbody.innerHTML += `<tr><td>TOTAL</td><td>10</td><td>1,880</td><td>11</td><td>638</td><td>—</td></tr>`;
+}
+
+function buildFullMatrix() {
+  const tbody = document.getElementById('full-matrix-body');
+  tbody.setAttribute('data-filterable','true');
+  BLOCKS.forEach((b, i) => {
+    const shgPct = Math.round(shgData.approved[i]/shgData.total[i]*100);
+    const voPct = Math.round(voData.approved[i]/voData.total[i]*100);
+    const clfPct = Math.round(clfData.txnDone[i]/clfData.total[i]*100);
+    const hs = heatColor(shgPct); const hv = heatColor(voPct); const hc = heatColor(clfPct);
+    const hme = heatColor(mobData.mobEntryPct[i]); const hmv = heatColor(mobData.mobVerPct[i]);
+    tbody.innerHTML += `<tr data-block="${i}">
+      <td style="font-weight:600;white-space:nowrap">${SHORT[i]}</td>
+      <td style="font-family:'DM Mono',monospace">${shgData.total[i]}</td>
+      <td><span class="heat-cell" style="background:${hs.bg};color:${hs.color}">${shgData.approved[i]}</span></td>
+      <td style="font-family:'DM Mono',monospace;color:#f43f5e">${shgData.pending[i]}</td>
+      <td style="font-family:'DM Mono',monospace">${voData.total[i]}</td>
+      <td><span class="heat-cell" style="background:${hv.bg};color:${hv.color}">${voData.approved[i]}</span></td>
+      <td style="font-family:'DM Mono',monospace">${clfData.total[i]}</td>
+      <td><span class="heat-cell" style="background:${hc.bg};color:${hc.color}">${clfData.txnDone[i]}</span></td>
+      <td style="font-family:'DM Mono',monospace">${mobData.activeSHG[i]}</td>
+      <td style="font-family:'DM Mono',monospace">${mobData.activeMbr[i].toLocaleString()}</td>
+      <td><span class="heat-cell" style="background:${hme.bg};color:${hme.color}">${mobData.mobEntryPct[i]}%</span></td>
+      <td><span class="heat-cell" style="background:${hmv.bg};color:${hmv.color}">${mobData.mobVerPct[i]}%</span></td>
+    </tr>`;
+  });
+  tbody.innerHTML += `<tr><td>TOTAL</td><td>3,222</td><td>2,607</td><td>615</td><td>419</td><td>324</td><td>27</td><td>14</td><td>3,156</td><td>25,901</td><td>69.8%</td><td>39.4%</td></tr>`;
+}
+
+function buildMobProgress(blockIdx) {
+  const container = document.getElementById('mob-progress');
+  container.innerHTML = '';
+  const indices = (blockIdx === undefined || blockIdx === 'ALL') ? [0,1,2,3,4] : [parseInt(blockIdx)];
+  indices.forEach(i => {
+    const b = BLOCKS[i];
+    const pct = mobData.mobEntryPct[i];
+    const vpct = mobData.mobVerPct[i];
+    const h = heatColor(pct);
+    container.innerHTML += `
+      <div class="prog-row">
+        <div class="prog-label-row">
+          <span class="prog-name">${b}</span>
+          <span class="prog-val">${mobData.mobEntry[i].toLocaleString()} / ${mobData.activeMbr[i].toLocaleString()}</span>
+        </div>
+        <div class="bar-inline">
+          <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);width:64px">Entry</span>
+          <div class="prog-track" style="flex:1">
+            <div class="prog-fill" style="width:${pct}%;background:${h.color}"></div>
+          </div>
+          <span class="bar-label">${pct}%</span>
+        </div>
+        <div class="bar-inline">
+          <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);width:64px">Verified</span>
+          <div class="prog-track" style="flex:1">
+            <div class="prog-fill" style="width:${vpct}%;background:#3b82f6"></div>
+          </div>
+          <span class="bar-label">${vpct}%</span>
+        </div>
+      </div>`;
+  });
+}
+
+// ── SHG SATURATION DATA ──
+const migSISD = {
+  active:    [389, 454, 755, 263, 72],
+  inactive:  [261, 296, 272, 190, 87],
+  def:       [53,  577, 453, 38,  21],
+  profDone:  [89,  140, 263, 66,  35],
+  profPend:  [580, 1074, 1210, 373, 132]
+};
+const actSISD = {
+  potSHG:    [43, 20, 24, 21, 59],
+  nonPotSHG: [29, 5,  7,  13, 21],
+  shgDone:   [19, 33, 19, 5,  19],
+  shgPend:   [3,  4,  0,  1,  37],
+  potMbr:    [229, 82, 36, 86, 410],
+  nonPotMbr: [76,  0,  3,  32, 44],
+  mbrDone:   [108, 244, 79, 22, 156],
+  mbrPend:   [18,  4,   3,  1, 192]
+};
+
+function initSaturationCharts() {
+  // Migrated SISD — member status grouped bar
+  makeBar('migSatBar', SHORT, [
+    { label: 'Active',   data: migSISD.active,   backgroundColor: '#00c8a0', borderRadius: 4 },
+    { label: 'Inactive', data: migSISD.inactive, backgroundColor: '#f59e0b', borderRadius: 4 },
+    { label: 'Default',  data: migSISD.def,      backgroundColor: '#f43f5e', borderRadius: 4 }
+  ]);
+
+  // Migrated SISD — pie
+  makePie('migSatPie',
+    ['Active (1,933 · 46.2%)', 'Default (1,142 · 27.3%)', 'Inactive (1,106 · 26.5%)'],
+    [1933, 1142, 1106],
+    ['#00c8a0', '#f59e0b', '#f43f5e']
+  );
+
+  // Migrated SISD — profiling bar
+  makeBar('migProfilingBar', SHORT, [
+    { label: 'Profile Completed', data: migSISD.profDone, backgroundColor: '#3b82f6', borderRadius: 4 },
+    { label: 'Profiling Pending', data: migSISD.profPend, backgroundColor: '#f43f5e', borderRadius: 4 }
+  ]);
+
+  // Migrated SISD — profiling rate horizontal
+  makeHorizBar('migProfilingRate', BLOCKS,
+    [{ label: 'Completion %',
+       data: migSISD.profDone.map((v,i) => Math.round(v/(v+migSISD.profPend[i])*100)),
+       backgroundColor: COLORS, borderRadius: 4 }],
+    { max: 100 }
+  );
+
+  // Actual SISD — SHG Potential vs Non-potential
+  makeBar('actSHGBar', SHORT, [
+    { label: 'Newly Potential SHG',     data: actSISD.potSHG,    backgroundColor: '#00c8a0', borderRadius: 4 },
+    { label: 'Newly Non-Potential SHG', data: actSISD.nonPotSHG, backgroundColor: '#f43f5e', borderRadius: 4 }
+  ]);
+
+  // Actual SISD — SHG registration
+  makeBar('actSHGRegBar', SHORT, [
+    { label: 'SHG Reg. Completed', data: actSISD.shgDone, backgroundColor: '#3b82f6', borderRadius: 4 },
+    { label: 'SHG Reg. Pending',   data: actSISD.shgPend, backgroundColor: '#f59e0b', borderRadius: 4 }
+  ]);
+
+  // Actual SISD — Member potential vs non-potential
+  makeBar('actMbrBar', SHORT, [
+    { label: 'Potential Members',     data: actSISD.potMbr,    backgroundColor: '#8b5cf6', borderRadius: 4 },
+    { label: 'Non-Potential Members', data: actSISD.nonPotMbr, backgroundColor: '#ec4899', borderRadius: 4 }
+  ]);
+
+  // Actual SISD — Member registration done vs pending
+  makeBar('actMbrRegBar', SHORT, [
+    { label: 'Mbr Reg. Completed', data: actSISD.mbrDone, backgroundColor: '#10b981', borderRadius: 4 },
+    { label: 'Mbr Reg. Pending',   data: actSISD.mbrPend, backgroundColor: '#f43f5e', borderRadius: 4 }
+  ]);
+
+  // Build matrices
+  buildMigSISDMatrix();
+  buildActSISDMatrix();
+}
+
+function buildMigSISDMatrix() {
+  const tbody = document.getElementById('mig-sisd-body');
+  tbody.setAttribute('data-filterable','true');
+  BLOCKS.forEach((b, i) => {
+    const total = migSISD.profDone[i] + migSISD.profPend[i];
+    const pct = Math.round(migSISD.profDone[i] / total * 100);
+    const h = heatColor(pct);
+    tbody.innerHTML += `<tr data-block="${i}">
+      <td style="font-weight:600">${b}</td>
+      <td style="color:#00c8a0;font-family:'DM Mono',monospace">${migSISD.active[i]}</td>
+      <td style="color:#f59e0b;font-family:'DM Mono',monospace">${migSISD.inactive[i]}</td>
+      <td style="color:#f43f5e;font-family:'DM Mono',monospace">${migSISD.def[i]}</td>
+      <td style="color:#3b82f6;font-family:'DM Mono',monospace">${migSISD.profDone[i]}</td>
+      <td style="color:#f43f5e;font-family:'DM Mono',monospace">${migSISD.profPend[i]}</td>
+      <td><div class="bar-inline">
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${h.color}"></div></div>
+        <span class="bar-label"><span class="heat-cell" style="background:${h.bg};color:${h.color};padding:2px 7px">${pct}%</span></span>
+      </div></td>
+    </tr>`;
+  });
+  tbody.innerHTML += `<tr><td>TOTAL</td>
+    <td style="color:#00c8a0;font-family:'DM Mono',monospace">1,933</td>
+    <td style="color:#f59e0b;font-family:'DM Mono',monospace">1,106</td>
+    <td style="color:#f43f5e;font-family:'DM Mono',monospace">1,142</td>
+    <td style="color:#3b82f6;font-family:'DM Mono',monospace">593</td>
+    <td style="color:#f43f5e;font-family:'DM Mono',monospace">3,369</td>
+    <td><span class="heat-cell" style="background:rgba(251,191,36,0.12);color:#fbbf24">15%</span></td>
+  </tr>`;
+}
+
+function buildActSISDMatrix() {
+  const tbody = document.getElementById('act-sisd-body');
+  tbody.setAttribute('data-filterable','true');
+  BLOCKS.forEach((b, i) => {
+    tbody.innerHTML += `<tr data-block="${i}">
+      <td style="font-weight:600">${b}</td>
+      <td style="color:#00c8a0;font-family:'DM Mono',monospace">${actSISD.potSHG[i]}</td>
+      <td style="color:#f43f5e;font-family:'DM Mono',monospace">${actSISD.nonPotSHG[i]}</td>
+      <td style="color:#3b82f6;font-family:'DM Mono',monospace">${actSISD.shgDone[i]}</td>
+      <td style="color:#f59e0b;font-family:'DM Mono',monospace">${actSISD.shgPend[i]}</td>
+      <td style="color:#8b5cf6;font-family:'DM Mono',monospace">${actSISD.potMbr[i]}</td>
+      <td style="color:#ec4899;font-family:'DM Mono',monospace">${actSISD.nonPotMbr[i]}</td>
+      <td style="color:#10b981;font-family:'DM Mono',monospace">${actSISD.mbrDone[i]}</td>
+      <td style="color:#f43f5e;font-family:'DM Mono',monospace">${actSISD.mbrPend[i]}</td>
+    </tr>`;
+  });
+  tbody.innerHTML += `<tr><td>TOTAL</td>
+    <td style="color:#00c8a0;font-family:'DM Mono',monospace">167</td>
+    <td style="color:#f43f5e;font-family:'DM Mono',monospace">75</td>
+    <td style="color:#3b82f6;font-family:'DM Mono',monospace">95</td>
+    <td style="color:#f59e0b;font-family:'DM Mono',monospace">45</td>
+    <td style="color:#8b5cf6;font-family:'DM Mono',monospace">843</td>
+    <td style="color:#ec4899;font-family:'DM Mono',monospace">155</td>
+    <td style="color:#10b981;font-family:'DM Mono',monospace">609</td>
+    <td style="color:#f43f5e;font-family:'DM Mono',monospace">218</td>
+  </tr>`;
+}
+
+
+function switchTab(name, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── BLOCK FILTER ──
+const BLOCK_COLORS = ['#00c8a0','#3b82f6','#f59e0b','#ef4444','#8b5cf6'];
+
+const ALL_CHART_CONFIGS = {}; // stores original full-data per chart id
+
+function storeChartData(id, labels, datasets) {
+  ALL_CHART_CONFIGS[id] = { labels: [...labels], datasets: datasets.map(d => ({...d, data:[...d.data]})) };
+}
+
+// Rebuild a chart with filtered single-block data
+function filterChart(id, blockIdx) {
+  const ch = Chart.getChart(id);
+  if (!ch) return;
+  const cfg = ALL_CHART_CONFIGS[id];
+  if (!cfg) return;
+  if (blockIdx === 'ALL') {
+    ch.data.labels = cfg.labels;
+    ch.data.datasets = cfg.datasets.map(d => ({...d, data:[...d.data]}));
+  } else {
+    const i = parseInt(blockIdx);
+    ch.data.labels = [cfg.labels[i]];
+    ch.data.datasets = cfg.datasets.map(d => ({...d, data:[d.data[i]]}));
+  }
+  ch.update('active');
+}
+
+// Filter pie chart
+function filterPieChart(id, blockIdx) {
+  const ch = Chart.getChart(id);
+  if (!ch) return;
+  const cfg = ALL_CHART_CONFIGS[id];
+  if (!cfg) return;
+  if (blockIdx === 'ALL') {
+    ch.data.labels = cfg.labels;
+    ch.data.datasets = cfg.datasets.map(d => ({...d, data:[...d.data]}));
+  }
+  // Pies show totals always — no per-block split meaningful for doughnuts
+  ch.update();
+}
+
+// Filter table rows by data-block attr
+function filterTables(blockIdx) {
+  document.querySelectorAll('tbody[data-filterable] tr[data-block]').forEach(tr => {
+    if (blockIdx === 'ALL' || tr.dataset.block === String(blockIdx)) {
+      tr.classList.remove('filtered-out');
+    } else {
+      tr.classList.add('filtered-out');
+    }
+  });
+}
+
+// Spotlight card data per block
+function showSpotlight(blockIdx) {
+  const sp = document.getElementById('spotlight-overview');
+  if (!sp) return;
+  if (blockIdx === 'ALL') { sp.classList.remove('visible'); return; }
+  const i = parseInt(blockIdx);
+  sp.classList.add('visible');
+  document.getElementById('spotlight-overview-title').textContent = '📍 ' + BLOCKS[i] + ' — Block Summary';
+  const shgPct = Math.round(shgData.approved[i]/shgData.total[i]*100);
+  const voPct  = Math.round(voData.approved[i]/voData.total[i]*100);
+  const clfPct = Math.round(clfData.txnDone[i]/clfData.total[i]*100);
+  const items = [
+    { label:'SHG Total',       val: shgData.total[i],               sub: `${shgData.approved[i]} approved · ${shgPct}%` },
+    { label:'VO Total',        val: voData.total[i],                sub: `${voData.approved[i]} approved · ${voPct}%` },
+    { label:'CLF Total',       val: clfData.total[i],               sub: `${clfData.txnDone[i]} txn done · ${clfPct}%` },
+    { label:'Active Members',  val: mobData.activeMbr[i].toLocaleString(), sub: `${mobData.activeSHG[i]} active SHGs` },
+    { label:'Mob Entry',       val: mobData.mobEntryPct[i]+'%',     sub: `${mobData.mobEntry[i].toLocaleString()} of ${mobData.activeMbr[i].toLocaleString()}` },
+    { label:'Mob Verified',    val: mobData.mobVerPct[i]+'%',       sub: `${mobData.mobVerAbs[i].toLocaleString()} numbers` },
+    { label:'Unmapped SHG',    val: unmappedData.shg[i],            sub: `${unmappedData.vo[i]} unmapped VO` },
+    { label:'Loose VO',        val: voData.loose[i],                sub: 'not linked to CLF' },
+  ];
+  document.getElementById('spotlight-overview-grid').innerHTML = items.map(it =>
+    `<div class="spotlight-item">
+      <div class="spotlight-item-label">${it.label}</div>
+      <div class="spotlight-item-val">${it.val}</div>
+      <div class="spotlight-item-sub">${it.sub}</div>
+    </div>`).join('');
+}
+
+const CHART_IDS_BAR = [
+  'shgApprovalBar','voApprovalBar','clfBar',
+  'shgBlockStacked','shgApprovalRate',
+  'saturationBar','voBlockBar','clfProfileBar','unmappedBar',
+  'clfTxnBar','clfTxnRate','voTxnBar','voTxnRate',
+  'mobBar','mobFunnel',
+  'migSatBar','migProfilingBar','migProfilingRate',
+  'actSHGBar','actSHGRegBar','actMbrBar','actMbrRegBar'
+];
+
+function applyBlockFilter() {
+  const val = document.getElementById('blockFilter').value;
+  const badge = document.getElementById('filterBadge');
+
+  if (val === 'ALL') {
+    badge.textContent = 'ALL 5 BLOCKS';
+    badge.style.color = 'var(--accent)';
+  } else {
+    badge.textContent = BLOCKS[parseInt(val)];
+    badge.style.color = '#fff';
+  }
+
+  // Filter all bar/line charts
+  CHART_IDS_BAR.forEach(id => filterChart(id, val));
+
+  // Filter tables
+  filterTables(val);
+
+  // Spotlight
+  showSpotlight(val);
+
+  // Rebuild mobile progress bars
+  buildMobProgress(val);
+}
+
+function resetFilter() {
+  document.getElementById('blockFilter').value = 'ALL';
+  applyBlockFilter();
+}
+
+window.addEventListener('load', initCharts);
+</script>
+</body>
+</html>
